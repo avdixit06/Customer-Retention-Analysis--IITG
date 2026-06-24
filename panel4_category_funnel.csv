@@ -1,0 +1,5 @@
+Category,Customer_Count,Mean_Prior_Purchases,Mean_Spend,Promo_Usage_Pct,Mean_Freq_Score,Mean_Rating,Veteran_Count,Emerging_Count,Core_Loyalist_Count,Deal_Seeker_Count,Category_Type
+Accessories,1240,25.73,59.84,43.8,4.08,3.77,428,391,469,389,Retention Category
+Footwear,599,25.23,60.26,43.2,4.16,3.79,188,181,230,184,Entry-Point Category
+Clothing,1737,25.2,60.03,42.1,4.08,3.72,560,557,670,525,Entry-Point Category
+Outerwear,324,24.96,57.17,44.4,4.16,3.75,113,120,104,102,Entry-Point Category

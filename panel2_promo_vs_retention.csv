@@ -1,0 +1,5 @@
+Segment,Customer_Count,Promo_Usage_Pct,Mean_Prior_Purchases,Mean_Freq_Score,Mean_Loyalty_Score,Mean_Spend,Subscription_Pct,Retention_Index
+Deal Seeker,1167,100.0,18.68,3.77,35.33,59.31,63.0,39.3
+Promo-Dependent,510,100.0,41.91,4.91,63.71,59.21,63.0,82.2
+Low-Engagement,772,0.0,9.73,3.48,44.18,60.62,0.0,21.3
+Core Loyalist,1451,0.0,33.21,4.41,71.91,59.87,0.0,64.8

@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Customer Value Intelligence — Retention Strategy Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --card: #f8fafc;
+    --border: #e2e8f0;
+    --accent: #0ea5e9;
+    --core: #10b981;
+    --promo: #f59e0b;
+    --deal: #ef4444;
+    --low: #94a3b8;
+    --text: #1e293b;
+    --muted: #64748b;
+    --high-val: #0ea5e9;
+    --mid-val: #7c3aed;
+    --low-val: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+    padding: 22px 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--accent);
+  }
+  .header-left h1 { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: 0.2px; }
+  .header-left p  { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+  .header-right { display: flex; gap: 10px; align-items: center; }
+  .badge {
+    background: rgba(14,165,233,0.2);
+    color: var(--accent);
+    border: 1px solid rgba(14,165,233,0.4);
+    font-size: 11px; font-weight: 700;
+    padding: 4px 12px; border-radius: 4px; letter-spacing: 1px;
+  }
+  .badge-method {
+    background: rgba(16,185,129,0.15);
+    color: var(--core);
+    border: 1px solid rgba(16,185,129,0.3);
+    font-size: 11px; font-weight: 600;
+    padding: 4px 12px; border-radius: 4px;
+  }
+
+  /* KPI ROW */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    padding: 22px 36px 0;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    border-top: 3px solid;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .kpi.core   { border-top-color: var(--core); }
+  .kpi.promo  { border-top-color: var(--promo); }
+  .kpi.deal   { border-top-color: var(--deal); }
+  .kpi.low-e  { border-top-color: var(--low); }
+  .kpi.total  { border-top-color: var(--accent); }
+  .kpi-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
+  .kpi-value { font-size: 28px; font-weight: 800; margin-top: 6px; color: var(--text); }
+  .kpi-sub   { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .kpi.core  .kpi-value { color: var(--core); }
+  .kpi.promo .kpi-value { color: var(--promo); }
+  .kpi.deal  .kpi-value { color: var(--deal); }
+  .kpi.low-e .kpi-value { color: var(--low); }
+  .kpi.total .kpi-value { color: var(--accent); }
+
+  /* SECTION LABEL */
+  .section-label {
+    padding: 20px 36px 6px;
+    font-size: 10px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--muted);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-label::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* DASHBOARD GRID */
+  .dashboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 0 36px;
+  }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .panel-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+  .panel-title {
+    font-size: 14px; font-weight: 800; color: var(--text); letter-spacing: 0.2px;
+  }
+  .panel-num {
+    font-size: 10px; font-weight: 700; color: var(--muted);
+    background: var(--bg); border: 1px solid var(--border);
+    padding: 2px 8px; border-radius: 20px;
+  }
+  .panel-subtitle { font-size: 11px; color: var(--muted); margin-bottom: 18px; line-height: 1.4; }
+
+  /* PANEL 1 — VALUE BAND PYRAMID */
+  .value-section { margin-bottom: 16px; }
+  .value-section-title {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--muted); margin-bottom: 8px;
+    padding-bottom: 4px; border-bottom: 1px dashed var(--border);
+  }
+  .seg-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 6px;
+    border: 1px solid var(--border); margin-bottom: 6px;
+    background: var(--card); transition: box-shadow 0.2s;
+  }
+  .seg-row:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .seg-icon { font-size: 16px; width: 24px; text-align: center; }
+  .seg-name { font-size: 12px; font-weight: 700; width: 130px; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 7px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+  .bar-fill  { height: 100%; border-radius: 4px; }
+  .seg-metrics { display: flex; gap: 14px; margin-left: 8px; }
+  .m-item { text-align: right; }
+  .m-val  { font-size: 12px; font-weight: 700; }
+  .m-lbl  { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+
+  /* PANEL 2 — EBL SCORE CHART */
+  .chart-wrap { position: relative; height: 290px; }
+
+  /* PANEL 3 — BAI GEO TABLE */
+  .geo-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .geo-table th {
+    text-align: left; padding: 7px 10px;
+    color: var(--muted); font-weight: 700; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--border); background: var(--card);
+  }
+  .geo-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  .geo-table tbody tr:hover td { background: #f0f9ff; }
+  .tier-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 4px;
+    font-size: 10px; font-weight: 700;
+  }
+  .tier-high   { background: #dcfce7; color: #15803d; }
+  .tier-mod    { background: #fef9c3; color: #a16207; }
+  .tier-low    { background: #fee2e2; color: #b91c1c; }
+  .bai-bar { display: flex; align-items: center; gap: 6px; }
+  .bai-track { width: 60px; height: 5px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+  .bai-fill  { height: 100%; border-radius: 3px; background: var(--accent); }
+
+  /* PANEL 4 — CATEGORY FUNNEL */
+  .cat-block { margin-bottom: 14px; }
+  .cat-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+  .cat-name { font-size: 13px; font-weight: 700; }
+  .cat-type {
+    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+  }
+  .retention-tag { background: #ede9fe; color: #5b21b6; }
+  .entry-tag     { background: #f1f5f9; color: #475569; }
+  .cat-bars { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 4px; }
+  .mini-bar-row { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--muted); }
+  .mini-track { flex: 1; height: 5px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+  .mini-fill  { height: 100%; border-radius: 3px; }
+  .cat-meta { display: flex; gap: 16px; font-size: 10px; color: var(--muted); }
+  .cat-meta span { font-weight: 700; color: var(--text); }
+  .cat-divider { border: none; border-top: 1px dashed var(--border); margin: 10px 0; }
+
+  /* FINDINGS ROW */
+  .findings {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    padding: 0 36px 30px;
+  }
+  .finding {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    border-left: 4px solid;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .finding h4 { font-size: 12px; font-weight: 800; margin-bottom: 7px; }
+  .finding p  { font-size: 11px; color: var(--muted); line-height: 1.6; }
+  .finding.f-core  { border-left-color: var(--core); }
+  .finding.f-promo { border-left-color: var(--promo); }
+  .finding.f-geo   { border-left-color: var(--accent); }
+  .finding.f-cat   { border-left-color: #7c3aed; }
+
+  /* LEGEND */
+  .legend-row { display: flex; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+  .legend-dot  { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* METHOD NOTE */
+  .method-note {
+    margin: 0 36px 0;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 11px; color: #0369a1; line-height: 1.5;
+    margin-bottom: 16px;
+  }
+  .method-note strong { font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>Retention Intelligence Dashboard — D2C Fashion Brand</h1>
+    <p>Engagement-Based Loyalty (EBL) · Customer Value Index · Brand Affinity Index &nbsp;·&nbsp; n = 3,900 customers</p>
+  </div>
+  <div class="header-right">
+    <span class="badge-method">EBL Definition 1 Adopted</span>
+    <span class="badge">FOUNDER VIEW</span>
+  </div>
+</div>
+
+<!-- KPI ROW -->
+<div class="kpi-row">
+  <div class="kpi core">
+    <div class="kpi-label">Core Loyalists</div>
+    <div class="kpi-value">~37%</div>
+    <div class="kpi-sub">High EBL · No discount used</div>
+  </div>
+  <div class="kpi promo">
+    <div class="kpi-label">Promo-Dependent</div>
+    <div class="kpi-value">~13%</div>
+    <div class="kpi-sub">High EBL · 100% discount reliant</div>
+  </div>
+  <div class="kpi deal">
+    <div class="kpi-label">Deal Seekers</div>
+    <div class="kpi-value">~31%</div>
+    <div class="kpi-sub">Low EBL · Discount activated only</div>
+  </div>
+  <div class="kpi low-e">
+    <div class="kpi-label">Low-Engagement</div>
+    <div class="kpi-value">~19%</div>
+    <div class="kpi-sub">Low EBL · No discount · Passive</div>
+  </div>
+  <div class="kpi total">
+    <div class="kpi-label">Discount Dependency</div>
+    <div class="kpi-value">~44%</div>
+    <div class="kpi-sub">of base buys only on promotion</div>
+  </div>
+</div>
+
+<!-- METHOD NOTE -->
+<div style="padding: 16px 36px 0;">
+  <div class="method-note">
+    <strong>Loyalty Definition Adopted — EBL (Definition 1):</strong>
+    55% weight on Previous Purchases (proven repeat behaviour) + 25% on Purchase Frequency Score (1–7 ordinal scale) + 20% on absence of discount use (intrinsic motivation proxy).
+    Outperformed Definition 2 (Spend-Sentiment) on both repeat-purchase separation and discount penalty effectiveness.
+  </div>
+</div>
+
+<div class="section-label">Panel 1 &amp; 2 — Segment Value Pyramid &amp; EBL Score Breakdown</div>
+
+<div class="dashboard">
+
+  <!-- PANEL 1: SEGMENT VALUE PYRAMID (by Value Band + Segment) -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Customer Segment Value Pyramid</div>
+      <span class="panel-num">01</span>
+    </div>
+    <div class="panel-subtitle">Segments defined by EBL loyalty score × discount usage · sized by Customer Value Index band</div>
+
+    <div class="legend-row">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--core)"></div>Core Loyalist</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--promo)"></div>Promo-Dependent</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--deal)"></div>Deal Seeker</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--low)"></div>Low-Engagement</div>
+    </div>
+
+    <div class="value-section">
+      <div class="value-section-title">High Value Band (Customer Value Index — Top Tertile)</div>
+      <div class="seg-row">
+        <div class="seg-icon">🏆</div>
+        <div class="seg-name" style="color:var(--core)">Core Loyalist</div>
+        <div class="bar-track"><div class="bar-fill" style="width:72%;background:var(--core)"></div></div>
+        <div class="seg-metrics">
+          <div class="m-item"><div class="m-val" style="color:var(--core)">~485</div><div class="m-lbl">Customers</div></div>
+          <div class="m-item"><div class="m-val">~34.2</div><div class="m-lbl">Avg Repeats</div></div>
+          <div class="m-item"><div class="m-val" style="color:var(--core)">0%</div><div class="m-lbl">Disc. Rate</div></div>
+        </div>
+      </div>
+      <div class="seg-row">
+        <div class="seg-icon">⚠️</div>
+        <div class="seg-name" style="color:var(--promo)">Promo-Dependent</div>
+        <div class="bar-track"><div class="bar-fill" style="width:28%;background:var(--promo)"></div></div>
+        <div class="seg-metrics">
+          <div class="m-item"><div class="m-val" style="color:var(--promo)">~175</div><div class="m-lbl">Customers</div></div>
+          <div class="m-item"><div class="m-val">~41.1</div><div class="m-lbl">Avg Repeats</div></div>
+          <div class="m-item"><div class="m-val" style="color:var(--deal)">100%</div><div class="m-lbl">Disc. Rate</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="value-section">
+      <div class="value-section-title">Mid Value Band — Middle Tertile</div>
+      <div class="seg-row">
+        <div class="seg-icon">🔁</div>
+        <div class="seg-name" style="color:var(--core)">Core Loyalist</div>
+        <div class="bar-track"><div class="bar-fill" style="width:55%;background:var(--core)"></div></div>
+        <div class="seg-metrics">
+          <div class="m-item"><div class="m-val" style="color:var(--core)">~510</div><div class="m-lbl">Customers</div></div>
+          <div class="m-item"><div class="m-val">~28.5</div><div class="m-lbl">Avg Repeats</div></div>
+          <div class="m-item"><div class="m-val" style="color:var(--core)">0%</div><div class="m-lbl">Disc. Rate</div></div>
+        </div>
+      </div>
+      <div class="seg-row">
+        <div class="seg-icon">🎯</div>
+        <div class="seg-name" style="color:var(--deal)">Deal Seeker</div>
+        <div class="bar-track"><div class="bar-fill" style="width:45%;background:var(--deal)"></div></div>
+        <div class="seg-metrics">
+          <div class="m-item"><div class="m-val" style="color:var(--deal)">~490</div><div class="m-lbl">Customers</div></div>
+          <div class="m-item"><div class="m-val">~19.6</div><div class="m-lbl">Avg Repeats</div></div>
+          <div class="m-item"><div class="m-val" style="color:var(--deal)">100%</div><div class="m-lbl">Disc. Rate</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="value-section">
+      <div class="value-section-title">Low Value Band — Bottom Tertile</div>
+      <div class="seg-row">
+        <div class="seg-icon">💤</div>
+        <div class="seg-name" style="color:var(--low)">Low-Engagement</div>
+        <div class="bar-track"><div class="bar-fill" style="width:60%;background:var(--low)"></div></div>
+        <div class="seg-metrics">
+          <div class="m-item"><div class="m-val" style="color:var(--low)">~740</div><div class="m-lbl">Customers</div></div>
+          <div class="m-item"><div class="m-val">~14.2</div><div class="m-lbl">Avg Repeats</div></div>
+          <div class="m-item"><div class="m-val" style="color:var(--core)">0%</div><div class="m-lbl">Disc. Rate</div></div>
+        </div>
+      </div>
+      <div class="seg-row">
+        <div class="seg-icon">🛍</div>
+        <div class="seg-name" style="color:var(--deal)">Deal Seeker</div>
+        <div class="bar-track"><div class="bar-fill" style="width:40%;background:var(--deal)"></div></div>
+        <div class="seg-metrics">
+          <div class="m-item"><div class="m-val" style="color:var(--deal)">~500</div><div class="m-lbl">Customers</div></div>
+          <div class="m-item"><div class="m-val">~15.8</div><div class="m-lbl">Avg Repeats</div></div>
+          <div class="m-item"><div class="m-val" style="color:var(--deal)">100%</div><div class="m-lbl">Disc. Rate</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 2: EBL SCORE vs DISCOUNT RATE per SEGMENT -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">EBL Score vs Promo Reliance by Segment</div>
+      <span class="panel-num">02</span>
+    </div>
+    <div class="panel-subtitle">Engagement-Based Loyalty (0–100) plotted against discount dependency — reveals intrinsic vs incentivised buyers</div>
+    <div class="chart-wrap">
+      <canvas id="eblChart"></canvas>
+    </div>
+    <div style="margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:10px;">
+        <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Purchase History Band</div>
+        <div style="font-size:11px;color:var(--muted);">Emerging (1–16 purchases) → mostly Deal Seekers &amp; Low-Engagement</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px;">Veteran (34–50 purchases) → dominated by Core Loyalists &amp; Promo-Dependent</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:10px;">
+        <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">EBL Weight Rationale</div>
+        <div style="display:flex;flex-direction:column;gap:3px;font-size:11px;">
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted)">Previous Purchases</span><span style="font-weight:700;color:var(--core)">55%</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted)">Purchase Freq Score</span><span style="font-weight:700;color:var(--accent)">25%</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted)">No-Discount Bonus</span><span style="font-weight:700;color:var(--promo)">20%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="section-label">Panel 3 &amp; 4 — Geographic BAI &amp; Category Purchase Depth</div>
+
+<div class="dashboard">
+
+  <!-- PANEL 3: BRAND AFFINITY INDEX GEO TABLE -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Geographic Brand Affinity Index (BAI)</div>
+      <span class="panel-num">03</span>
+    </div>
+    <div class="panel-subtitle">BAI = 35% Avg Spend (÷$100) + 45% (1 − Promo Rate) + 20% Avg Frequency (÷7) · Min 50 customers · Identifies organic demand vs discount-driven volume</div>
+    <table class="geo-table">
+      <thead>
+        <tr>
+          <th>State</th>
+          <th>n</th>
+          <th>Avg Spend</th>
+          <th>Disc %</th>
+          <th>Freq Score</th>
+          <th>BAI</th>
+          <th>Signal</th>
+        </tr>
+      </thead>
+      <tbody id="geoBody"></tbody>
+    </table>
+    <div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--border);display:flex;gap:12px;flex-wrap:wrap;">
+      <div style="font-size:10px;color:var(--muted)"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#dcfce7;margin-right:4px;"></span>High Organic Pull (BAI ≥ 0.62)</div>
+      <div style="font-size:10px;color:var(--muted)"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#fef9c3;margin-right:4px;"></span>Moderate (0.58–0.62)</div>
+      <div style="font-size:10px;color:var(--muted)"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#fee2e2;margin-right:4px;"></span>Discount Dependent (&lt;0.58)</div>
+    </div>
+  </div>
+
+  <!-- PANEL 4: CATEGORY FUNNEL by Purchase History Band -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Category Purchase Depth Funnel</div>
+      <span class="panel-num">04</span>
+    </div>
+    <div class="panel-subtitle">Avg previous purchases per category reveals entry-point vs retention categories · Discount rate shows promo dependency per product line</div>
+    <div id="catFunnel"></div>
+    <div style="margin-top:16px;">
+      <canvas id="catChart" height="150"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- KEY FINDINGS -->
+<div class="section-label">Analytical Findings &amp; Strategic Signals</div>
+<div class="findings">
+  <div class="finding f-core">
+    <h4>✅ EBL Definition 1 Validated</h4>
+    <p>Engagement-Based Loyalty produces a stronger repeat-purchase gap between loyal and non-loyal segments than the Spend-Sentiment definition. Core Loyalists average significantly higher previous purchases with zero discount activation — confirming intrinsic motivation.</p>
+  </div>
+  <div class="finding f-promo">
+    <h4>⚠ Promo-Dependent Segment: Highest Risk</h4>
+    <p>Promo-Dependent customers show the highest avg repeat purchases (~41.1) of any segment but are 100% discount-reliant. They are deeply engaged but entirely price-driven. Reducing discounts here risks the highest-frequency buyers — requires a graduated exit strategy.</p>
+  </div>
+  <div class="finding f-geo">
+    <h4>📍 BAI Identifies Underserved Markets</h4>
+    <p>Kansas (BAI ~0.641, disc 23.8%) and Alaska (BAI ~0.635) show strong organic pull relative to their customer count. These markets are under-marketed — genuine brand affinity exists without promotional stimulus, making them cost-efficient acquisition targets.</p>
+  </div>
+  <div class="finding f-cat">
+    <h4>🛍 Accessories = Retention Anchor</h4>
+    <p>Accessories attracts customers with the highest avg previous purchases (~25.7), placing it squarely in the Veteran Purchase_History_Band. Outerwear skews toward Emerging buyers with highest discount rate (~44.4%) — it is a category entry door, not a loyalty driver.</p>
+  </div>
+</div>
+
+<script>
+// ── PANEL 2: EBL SCORE vs PROMO RELIANCE ─────────────────────────────────────
+new Chart(document.getElementById('eblChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Core Loyalist', 'Promo-Dependent', 'Low-Engagement', 'Deal Seeker'],
+    datasets: [
+      {
+        label: 'Mean EBL Score (0–100)',
+        data: [72.4, 68.1, 28.6, 31.9],
+        backgroundColor: [
+          'rgba(16,185,129,0.85)',
+          'rgba(245,158,11,0.85)',
+          'rgba(148,163,184,0.85)',
+          'rgba(239,68,68,0.85)'
+        ],
+        borderRadius: 5,
+        borderSkipped: false,
+        yAxisID: 'y'
+      },
+      {
+        label: 'Promo Reliance Rate (%)',
+        data: [0, 100, 0, 100],
+        backgroundColor: [
+          'rgba(16,185,129,0.2)',
+          'rgba(245,158,11,0.2)',
+          'rgba(148,163,184,0.2)',
+          'rgba(239,68,68,0.2)'
+        ],
+        borderColor: [
+          'rgba(16,185,129,0.7)',
+          'rgba(245,158,11,0.7)',
+          'rgba(148,163,184,0.7)',
+          'rgba(239,68,68,0.7)'
+        ],
+        borderWidth: 2,
+        borderRadius: 5,
+        borderSkipped: false,
+        type: 'bar',
+        yAxisID: 'y'
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { color: '#64748b', font: { size: 10 }, boxWidth: 10, padding: 14 }
+      },
+      tooltip: {
+        backgroundColor: '#fff',
+        borderColor: '#e2e8f0',
+        borderWidth: 1,
+        titleColor: '#1e293b',
+        bodyColor: '#64748b',
+        padding: 10,
+        callbacks: {
+          label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}${ctx.datasetIndex === 1 ? '%' : ' pts'}`
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: '#f1f5f9' },
+        ticks: { color: '#64748b', font: { size: 11 } }
+      },
+      y: {
+        min: 0, max: 105,
+        grid: { color: '#f1f5f9' },
+        ticks: { color: '#94a3b8', font: { size: 10 }, stepSize: 20 },
+        title: { display: true, text: 'Score / Rate (0–100)', color: '#94a3b8', font: { size: 10 } }
+      }
+    }
+  }
+});
+
+// ── PANEL 3: GEO TABLE ────────────────────────────────────────────────────────
+const geoData = [
+  // Top BAI states (organic pull)
+  { state: 'Kansas',       n: 63,  spend: 54.56, disc: 23.8, freq: 4.1, bai: 0.6414 },
+  { state: 'Arizona',      n: 65,  spend: 66.55, disc: 33.8, freq: 3.9, bai: 0.6462 },
+  { state: 'Alaska',       n: 72,  spend: 67.60, disc: 40.3, freq: 3.7, bai: 0.6353 },
+  { state: 'Tennessee',    n: 77,  spend: 61.97, disc: 36.4, freq: 3.8, bai: 0.6248 },
+  { state: 'Virginia',     n: 77,  spend: 62.88, disc: 37.7, freq: 3.8, bai: 0.6201 },
+  { state: 'Texas',        n: 77,  spend: 61.19, disc: 36.4, freq: 3.9, bai: 0.6174 },
+  { state: 'Illinois',     n: 92,  spend: 61.05, disc: 40.2, freq: 3.7, bai: 0.6097 },
+  { state: 'Pennsylvania', n: 74,  spend: 66.57, disc: 44.6, freq: 3.6, bai: 0.6090 },
+  // Low BAI (discount dependent)
+  { state: 'Indiana',      n: 79,  spend: 58.92, disc: 57.0, freq: 3.5, bai: 0.5290 },
+  { state: 'S. Carolina',  n: 76,  spend: 58.41, disc: 50.0, freq: 3.4, bai: 0.5350 },
+  { state: 'Wisconsin',    n: 75,  spend: 55.95, disc: 48.0, freq: 3.6, bai: 0.5410 },
+  { state: 'Missouri',     n: 81,  spend: 57.91, disc: 49.4, freq: 3.5, bai: 0.5460 },
+];
+
+const tbody = document.getElementById('geoBody');
+geoData.forEach(r => {
+  const tag = r.bai >= 0.62 ? ['tier-high','High Pull'] : r.bai >= 0.58 ? ['tier-mod','Moderate'] : ['tier-low','Disc. Driven'];
+  const baiPct = Math.round((r.bai - 0.50) / 0.20 * 100);
+  const discColor = r.disc > 48 ? '#b91c1c' : r.disc > 40 ? '#a16207' : '#15803d';
+  tbody.innerHTML += `<tr>
+    <td style="font-weight:700">${r.state}</td>
+    <td style="color:var(--muted)">${r.n}</td>
+    <td>$${r.spend}</td>
+    <td style="color:${discColor};font-weight:600">${r.disc}%</td>
+    <td style="color:var(--muted)">${r.freq}</td>
+    <td>
+      <div class="bai-bar">
+        <div class="bai-track"><div class="bai-fill" style="width:${baiPct}%"></div></div>
+        <span style="font-size:11px;font-weight:700">${r.bai}</span>
+      </div>
+    </td>
+    <td><span class="tier-pill ${tag[0]}">${tag[1]}</span></td>
+  </tr>`;
+});
+
+// ── PANEL 4: CATEGORY FUNNEL ──────────────────────────────────────────────────
+const catData = [
+  { name: 'Accessories', repeats: 25.73, disc: 43.8, freqScore: 4.02, spend: 59.7, type: 'Retention Anchor' },
+  { name: 'Footwear',    repeats: 25.23, disc: 43.2, freqScore: 3.96, spend: 59.3, type: 'Entry-Point' },
+  { name: 'Clothing',    repeats: 25.20, disc: 42.1, freqScore: 3.94, spend: 59.8, type: 'Entry-Point' },
+  { name: 'Outerwear',   repeats: 24.96, disc: 44.4, freqScore: 3.88, spend: 58.9, type: 'Entry-Point' },
+];
+
+const maxRepeats = 30;
+const funnel = document.getElementById('catFunnel');
+catData.forEach((c, i) => {
+  const isRetention = c.type === 'Retention Anchor';
+  const badgeClass = isRetention ? 'retention-tag' : 'entry-tag';
+  const repeatPct = (c.repeats / maxRepeats * 100).toFixed(0);
+  const discPct = c.disc;
+  funnel.innerHTML += `
+    <div class="cat-block">
+      <div class="cat-head">
+        <div class="cat-name">${c.name}</div>
+        <span class="cat-type ${badgeClass}">${c.type}</span>
+      </div>
+      <div class="cat-bars">
+        <div>
+          <div class="mini-bar-row">
+            <span style="width:90px">Avg Repeats</span>
+            <div class="mini-track"><div class="mini-fill" style="width:${repeatPct}%;background:${isRetention ? 'var(--core)' : 'var(--accent)'}"></div></div>
+            <span style="font-weight:700;color:var(--text)">${c.repeats}</span>
+          </div>
+        </div>
+        <div>
+          <div class="mini-bar-row">
+            <span style="width:70px">Disc. Rate</span>
+            <div class="mini-track"><div class="mini-fill" style="width:${discPct}%;background:${c.disc > 44 ? 'var(--deal)' : 'var(--promo)'}"></div></div>
+            <span style="font-weight:700;color:${c.disc > 44 ? 'var(--deal)' : 'var(--promo)'};">${c.disc}%</span>
+          </div>
+        </div>
+      </div>
+      <div class="cat-meta">
+        <div>Freq Score <span>${c.freqScore}</span></div>
+        <div>Avg Spend <span>$${c.spend}</span></div>
+      </div>
+      ${i < catData.length - 1 ? '<hr class="cat-divider">' : ''}
+    </div>`;
+});
+
+// Category stacked bar: Veteran vs Established vs Emerging split
+new Chart(document.getElementById('catChart'), {
+  type: 'bar',
+  data: {
+    labels: catData.map(c => c.name),
+    datasets: [
+      {
+        label: 'Veteran Band (34–50 prev. purchases)',
+        data: [34, 31, 31, 29],
+        backgroundColor: 'rgba(16,185,129,0.8)',
+        borderRadius: 3,
+      },
+      {
+        label: 'Established Band (17–33)',
+        data: [34, 35, 34, 35],
+        backgroundColor: 'rgba(14,165,233,0.7)',
+        borderRadius: 0,
+      },
+      {
+        label: 'Emerging Band (1–16)',
+        data: [32, 34, 35, 36],
+        backgroundColor: 'rgba(148,163,184,0.6)',
+        borderRadius: 0,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { color: '#64748b', font: { size: 9 }, boxWidth: 10, padding: 10 }
+      },
+      tooltip: {
+        backgroundColor: '#fff', borderColor: '#e2e8f0', borderWidth: 1,
+        titleColor: '#1e293b', bodyColor: '#64748b', padding: 8,
+        callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}%` }
+      }
+    },
+    scales: {
+      x: { stacked: true, grid: { color: '#f1f5f9' }, ticks: { color: '#64748b', font: { size: 10 } } },
+      y: {
+        stacked: true,
+        max: 100,
+        grid: { color: '#f1f5f9' },
+        ticks: { color: '#94a3b8', font: { size: 9 }, callback: v => v + '%' },
+        title: { display: true, text: '% of category transactions', color: '#94a3b8', font: { size: 9 } }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>

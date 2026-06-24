@@ -1,0 +1,5 @@
+Segment,Customer_Count,Share_Of_Base_Pct,Mean_Spend,Mean_Loyalty_Score,Mean_Prior_Purchases,Revenue_Contribution_Pct,Promo_Usage_Pct,Subscription_Pct,Pyramid_Order
+Core Loyalist,1451,37.2,59.87,71.91,33.21,37.2,0.0,0.0,1
+Promo-Dependent,510,13.1,59.21,63.71,41.91,13.1,100.0,63.0,2
+Low-Engagement,772,19.8,60.62,44.18,9.73,20.1,0.0,0.0,3
+Deal Seeker,1167,29.9,59.31,35.33,18.68,29.6,100.0,63.0,4
